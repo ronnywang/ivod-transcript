@@ -1,6 +1,10 @@
 <?php
 
-for ($v = 146300; $v > 0; $v --) {
+$crawled = 0;
+system("php crawl-html.php");
+
+$v = max(intval(file_get_contents('current-id')), 146312);
+for (; $v > 0; $v --) {
     $url = sprintf("https://ivod.ly.gov.tw/Play/Clip/1M/%d", $v);
     $html_target = __DIR__ . "/html/{$v}.html";
     if (!file_exists($html_target)) {
@@ -28,6 +32,7 @@ for ($v = 146300; $v > 0; $v --) {
     $cmd = sprintf("youtube-dl -o output.mp4 %s", escapeshellarg($video_url));
     system($cmd);
     if (!file_exists("output.mp4")) {
+        continue;
         throw new Exception("download mp4 failed: $url");
     }
     if (file_exists("output.wav")) {
@@ -40,4 +45,6 @@ for ($v = 146300; $v > 0; $v --) {
     $cmd = sprintf("./whisper.cpp/main -m ./whisper.cpp/models/ggml-medium.bin -l auto output.wav > %s", escapeshellarg($tmp_target));
     system($cmd);
     rename($tmp_target, $target);
+    $crawled ++;
+    if ($crawled > 5) break;
 }
